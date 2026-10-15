@@ -7,8 +7,8 @@ public class PlayerDashAttack : MonoBehaviour
     public float dashSpeed = 20f;
     public float stoppingDistance = 0.5f;
 
-    private Vector2 startPosition;
-    private bool isDashing = false;
+    private Vector3 startPosition;
+    public bool isDashing = false;
 
     // Define the movement states
     private enum DashState { Idle, MovingToEnemy, Returning }
@@ -16,26 +16,36 @@ public class PlayerDashAttack : MonoBehaviour
 
     public Enemy enemy;
 
-    public void StartDashAttack()
-    {
-        if (isDashing) return;
+    [SerializeField] private Animator playerAnimator;
 
-        StartCoroutine(ExecuteDashSequence(enemy.transform));
+    public void StartDashAttack(Enemy targetEnemy)
+    {
+        if (targetEnemy == null) return;
+
+        if (!isDashing)
+        {
+            StartCoroutine(ExecuteDashSequence(targetEnemy));
+        }
     }
 
-    private IEnumerator ExecuteDashSequence(Transform enemyTransform)
+    private IEnumerator ExecuteDashSequence(Enemy targetEnemy)
     {
         isDashing = true;
 
         // Record player starting position before moving
         startPosition = transform.position;
 
+        Transform enemyTransform = targetEnemy.transform;
+
         // Dash to enemy
         currentState = DashState.MovingToEnemy;
-        while (Vector2.Distance(transform.position, enemyTransform.position) > stoppingDistance)
+        while (enemyTransform != null && Vector3.Distance(transform.position, enemyTransform.position) > stoppingDistance)
         {
+            playerAnimator.SetBool("isIdle", false);
+            playerAnimator.SetBool("isSprinting", true);
+
             // Frame-rate independent movement towards the enemy
-            transform.position = Vector2.MoveTowards(
+            transform.position = Vector3.MoveTowards(
                 transform.position,
                 enemyTransform.position,
                 dashSpeed * Time.deltaTime
@@ -43,15 +53,24 @@ public class PlayerDashAttack : MonoBehaviour
             yield return null; // Wait for the next frame
         }
 
-        // Optional: Insert logic here to apply damage or play an impact effect
-        enemy.TakeDamage();
+        // Apply damage to enemy
+        if (targetEnemy != null)
+        {
+            playerAnimator.SetBool("isSprinting", false);
+            playerAnimator.SetBool("isAttacking", true);
+            targetEnemy.TakeDamage();
+        }
+        yield return new WaitForSeconds(1f);
 
         // Return to player starting position
         currentState = DashState.Returning;
-        while (Vector2.Distance(transform.position, startPosition) > 0.01f)
+        while (Vector3.Distance(transform.position, startPosition) > 0.01f)
         {
+            playerAnimator.SetBool("isAttacking", false);
+            playerAnimator.SetBool("isSprinting", true);
+
             // Frame-rate independent movement back to start
-            transform.position = Vector2.MoveTowards(
+            transform.position = Vector3.MoveTowards(
                 transform.position,
                 startPosition,
                 dashSpeed * Time.deltaTime
@@ -62,6 +81,8 @@ public class PlayerDashAttack : MonoBehaviour
         // Sequence complete, reset player state
         transform.position = startPosition; // Snap perfectly to start position to avoid minor offsets
         currentState = DashState.Idle;
+        playerAnimator.SetBool("isSprinting", false);
+        playerAnimator.SetBool("isIdle", true);
         isDashing = false;
     }
 }

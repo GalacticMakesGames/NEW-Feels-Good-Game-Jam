@@ -14,6 +14,11 @@ public class EnemySpawner : MonoBehaviour
 
     private float timeUntilSpawn;
 
+    [SerializeField] private int maxEnemyLimit = 5;
+    [SerializeField] private int resumeEnemySpawnThreshold = 2;
+
+    private bool isSpawningRestricted = false;
+
     void Awake()
     {
         SetTimeUntilSpawn();
@@ -21,9 +26,20 @@ public class EnemySpawner : MonoBehaviour
 
     void Update()
     {
+        int currentEnemyCount = EnemyCountTracker.activeEnemyInstances.Count;
+
+        if (isSpawningRestricted == false && currentEnemyCount >= maxEnemyLimit)
+        {
+            isSpawningRestricted = true;
+        }
+        else if (isSpawningRestricted == true && currentEnemyCount <= resumeEnemySpawnThreshold)
+        {
+            isSpawningRestricted = false;
+        }
+
         timeUntilSpawn -= Time.deltaTime;
 
-        if (timeUntilSpawn <= 0)
+        if (isSpawningRestricted == false && timeUntilSpawn <= 0)
         {
             GameObject spawnedEnemy = Instantiate(enemyPrefab, transform.position, Quaternion.identity);
             Enemy enemy = spawnedEnemy.GetComponent<Enemy>();

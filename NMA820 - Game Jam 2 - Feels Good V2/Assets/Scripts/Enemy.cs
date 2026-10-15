@@ -10,22 +10,18 @@ public class Enemy : MonoBehaviour
     [SerializeField] 
     private float moveSpeed;
 
-    [SerializeField]
-    private float rotationSpeed;
+    //[SerializeField]
+    //private float rotationSpeed;
 
     private Rigidbody2D rb;
     private PlayerAwarenessController playerAwarenessController;
     private Vector2 targetDirection;
-
-    //Transform target;
 
     // Holds the unique key this specific enemy needs to be attacked
     public KeyCode assignedKey { get; private set; } = KeyCode.None;
 
     [SerializeField] private TextMeshProUGUI enemyAttackKeybindPromptText;
     [SerializeField] private Image enemyAttackKeybindPrompt;
-
-    //public GameObject enemyPrefab;
 
     private void Awake()
     {
@@ -38,7 +34,7 @@ public class Enemy : MonoBehaviour
     private void FixedUpdate()
     {
         UpdateTargetDirection();
-        RotateTowardsTarget();
+        //RotateTowardsTarget();
         SetVelocity();
     }
 
@@ -54,18 +50,18 @@ public class Enemy : MonoBehaviour
         }
     }
 
-    private void RotateTowardsTarget()
-    {
-        if (targetDirection == Vector2.zero)
-        {
-            return;
-        }
+    //private void RotateTowardsTarget()
+    //{
+    //    if (targetDirection == Vector2.zero)
+    //    {
+    //        return;
+    //    }
 
-        Quaternion targetRotation = Quaternion.LookRotation(transform.forward, targetDirection);
-        Quaternion rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+    //    Quaternion targetRotation = Quaternion.LookRotation(transform.forward, targetDirection);
+    //    Quaternion rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
 
-        rb.SetRotation(rotation);
-    }
+    //    rb.SetRotation(rotation);
+    //}
 
     private void SetVelocity()
     {
@@ -75,7 +71,7 @@ public class Enemy : MonoBehaviour
         }
         else
         {
-            rb.velocity = transform.up * moveSpeed;
+            rb.velocity = targetDirection * moveSpeed;
         }
     }
 
@@ -114,7 +110,7 @@ public class Enemy : MonoBehaviour
     {
         // Tells the manager that this enemy was killed so its key can be returned to the pool
         EnemyKeyManager.Instance.ReleaseKeyAndRemoveEnemy(this);
-        Destroy(gameObject);
+        Destroy(gameObject, 1f);
 
         //GameObject enemyClone = Instantiate(enemyPrefab, transform.position, transform.rotation);
 
@@ -130,7 +126,9 @@ public class Enemy : MonoBehaviour
         if (collision.tag == "Player")
         {
             var healthComponent = collision.GetComponent<PlayerHealth>();
-            if(healthComponent != null)
+            var playerDashAttack = collision.GetComponent<PlayerDashAttack>();
+
+            if(healthComponent != null && playerDashAttack.isDashing == false)
             {
                 healthComponent.PlayerTakeDamage(1);
             }

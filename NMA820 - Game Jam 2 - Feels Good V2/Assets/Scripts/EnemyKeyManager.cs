@@ -40,11 +40,17 @@ public class EnemyKeyManager : MonoBehaviour
             {
                 Enemy enemy = activeEnemies[i];
 
-                // If the player presses the key assigned to this enemy while the enemy is in the attack zone, attack it
-                if (Input.GetKeyDown(enemy.assignedKey) && attackZoneCollision.canAttack == true)
+                if (enemy == null)
                 {
-                    enemy.TakeDamage();
-                    //playerDashAttack.StartDashAttack();
+                    activeEnemies.RemoveAt(i);
+                    continue;
+                }
+
+                // If the player presses the key assigned to this enemy while the enemy is in the attack zone, attack it
+                if (enemy.assignedKey != KeyCode.None && Input.GetKeyDown(enemy.assignedKey) && attackZoneCollision.canAttack == true)
+                {
+                    //enemy.TakeDamage();
+                    playerDashAttack.StartDashAttack(enemy);
                     break;
                 }
             }

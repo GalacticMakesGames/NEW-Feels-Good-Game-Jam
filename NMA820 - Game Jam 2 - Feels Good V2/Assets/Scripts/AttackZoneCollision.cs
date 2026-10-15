@@ -19,7 +19,7 @@ public class AttackZoneCollision : MonoBehaviour
     {
         if (other.CompareTag("Enemy"))
         {
-            canAttack = false;
+            //canAttack = false;
             canCloseCallAttack = true;
         }
     }
