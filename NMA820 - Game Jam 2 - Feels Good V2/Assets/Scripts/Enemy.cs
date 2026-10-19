@@ -10,9 +10,6 @@ public class Enemy : MonoBehaviour
     [SerializeField] 
     private float moveSpeed;
 
-    //[SerializeField]
-    //private float rotationSpeed;
-
     private Rigidbody2D rb;
     private PlayerAwarenessController playerAwarenessController;
     private Vector2 targetDirection;
@@ -22,6 +19,13 @@ public class Enemy : MonoBehaviour
 
     [SerializeField] private TextMeshProUGUI enemyAttackKeybindPromptText;
     [SerializeField] private Image enemyAttackKeybindPrompt;
+
+    [SerializeField] private Animator enemyAnimator;
+
+    public GameObject lightBeamPrefab; // Assign your LightBeam prefab here in Inspector
+    public float spawnHeightOffset = 10f; // How high "the sky" is above the enemy
+
+    public GameObject enemyExplosionParticlePrefab;
 
     private void Awake()
     {
@@ -34,7 +38,6 @@ public class Enemy : MonoBehaviour
     private void FixedUpdate()
     {
         UpdateTargetDirection();
-        //RotateTowardsTarget();
         SetVelocity();
     }
 
@@ -50,19 +53,6 @@ public class Enemy : MonoBehaviour
         }
     }
 
-    //private void RotateTowardsTarget()
-    //{
-    //    if (targetDirection == Vector2.zero)
-    //    {
-    //        return;
-    //    }
-
-    //    Quaternion targetRotation = Quaternion.LookRotation(transform.forward, targetDirection);
-    //    Quaternion rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
-
-    //    rb.SetRotation(rotation);
-    //}
-
     private void SetVelocity()
     {
         if (targetDirection == Vector2.zero)
@@ -74,25 +64,6 @@ public class Enemy : MonoBehaviour
             rb.velocity = targetDirection * moveSpeed;
         }
     }
-
-    //private void Awake()
-    //{
-    //    rb = GetComponent<Rigidbody2D>();
-    //    target = GameObject.Find("Player").transform;
-    //}
-
-    //private void Update()
-    //{
-    //    Vector3 direction = (target.position - transform.position).normalized;
-    //    float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-    //    rb.rotation = angle;
-    //    moveDirection = direction;
-    //}
-
-    //private void FixedUpdate()
-    //{
-    //    rb.velocity = new Vector2(moveDirection.x, moveDirection.y) * moveSpeed;
-    //}
 
     public void SetAssignedKey(KeyCode key)
     {
@@ -108,35 +79,78 @@ public class Enemy : MonoBehaviour
 
     public void TakeDamage()
     {
+        // Disable collider & stop movement immediately so it can't push the player
+        BoxCollider2D col = GetComponent<BoxCollider2D>();
+        if (col != null) col.enabled = false;
+
+        //rb.isKinematic = true;
+
+        if (rb != null) rb.velocity = Vector2.zero;
+        rb.angularVelocity = 0f;
+
+        enemyAnimator.SetBool("isWalking", false);
+        enemyAnimator.SetBool("isDead", true);
+
+        StartCoroutine(DeathSequence());
+    }
+
+    private IEnumerator DeathSequence()
+    {
+        // Wait for the animation to finish
+        yield return new WaitForSeconds(1f);
+
+        // Calculate the spawn position directly above the enemy
+        Vector3 spawnPosition = new Vector3(
+            transform.position.x,
+            transform.position.y + spawnHeightOffset,
+            transform.position.z
+        );
+
+        // Instantiate the light beam from the sky
+        if (lightBeamPrefab != null)
+        {
+            Instantiate(lightBeamPrefab, spawnPosition, Quaternion.identity);
+        }
+
+        // Spawn the particle effect at the hit position
+        if (enemyExplosionParticlePrefab != null)
+        {
+            Instantiate(enemyExplosionParticlePrefab, transform.position, Quaternion.identity);
+        }
+
+        yield return new WaitForSeconds(1f);
+
         // Tells the manager that this enemy was killed so its key can be returned to the pool
         EnemyKeyManager.Instance.ReleaseKeyAndRemoveEnemy(this);
-        Destroy(gameObject, 1f);
-
-        //GameObject enemyClone = Instantiate(enemyPrefab, transform.position, transform.rotation);
-
-        //// Tells the manager that this enemy was killed so its key can be returned to the pool
-        //EnemyKeyManager.Instance.ReleaseKeyAndRemoveEnemy(this);
-
-        ////Destroy(gameObject);
-        //Destroy(enemyClone);
+        Destroy(gameObject);
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (collision.tag == "Player")
-        {
-            var healthComponent = collision.GetComponent<PlayerHealth>();
-            var playerDashAttack = collision.GetComponent<PlayerDashAttack>();
+        PlayerHealth healthComponent = collision.GetComponentInParent<PlayerHealth>();
+        PlayerDashAttack playerDashAttack = collision.GetComponentInParent<PlayerDashAttack>();
 
-            if(healthComponent != null && playerDashAttack.isDashing == false)
+        // Enables visibility of keybind prompt when enemies enter the main attack zone
+        if (collision.CompareTag("MainAttackZone"))
+        {
+            if (enemyAttackKeybindPrompt != null)
             {
-                healthComponent.PlayerTakeDamage(1);
+                enemyAttackKeybindPrompt.enabled = true;
             }
         }
 
-        if (collision.tag == "MainAttackZone")
+        // Handle player damage (ignore the main attack zone trigger so damage only applies on body contact)
+        if (healthComponent != null && !collision.CompareTag("MainAttackZone"))
         {
-            enemyAttackKeybindPrompt.enabled = true;
+            bool isDashing = playerDashAttack != null && playerDashAttack.isDashing;
+
+            if (!isDashing)
+            {
+                Debug.Log("Player was hit!");
+                enemyAnimator.SetTrigger("isAttacking");
+
+                healthComponent.PlayerTakeDamage(1);
+            }
         }
     }
 }

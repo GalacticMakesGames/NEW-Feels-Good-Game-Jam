@@ -4,11 +4,11 @@ using UnityEngine;
 
 public class PlayerDashAttack : MonoBehaviour
 {
-    public float dashSpeed = 20f;
+    public float dashSpeed = 30f;
     public float stoppingDistance = 0.5f;
 
     private Vector3 startPosition;
-    public bool isDashing = false;
+    public bool isDashing { get; private set; } = false;
 
     // Define the movement states
     private enum DashState { Idle, MovingToEnemy, Returning }
@@ -17,6 +17,13 @@ public class PlayerDashAttack : MonoBehaviour
     public Enemy enemy;
 
     [SerializeField] private Animator playerAnimator;
+
+    private SpriteRenderer spriteRenderer;
+
+    private void Awake()
+    {
+        spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+    }
 
     public void StartDashAttack(Enemy targetEnemy)
     {
@@ -56,8 +63,14 @@ public class PlayerDashAttack : MonoBehaviour
         // Apply damage to enemy
         if (targetEnemy != null)
         {
-            playerAnimator.SetBool("isSprinting", false);
-            playerAnimator.SetBool("isAttacking", true);
+            //playerAnimator.SetBool("isSprinting", false);
+            //playerAnimator.SetBool("isAttacking", true);
+            if (enemyTransform != null)
+            {
+                // If the enemy is to the left of the player, flip the sprite; otherwise, face right.
+                spriteRenderer.flipX = enemyTransform.position.x < transform.position.x;
+            }
+            playerAnimator.SetTrigger("isAttacking1");
             targetEnemy.TakeDamage();
         }
         yield return new WaitForSeconds(1f);
@@ -66,8 +79,8 @@ public class PlayerDashAttack : MonoBehaviour
         currentState = DashState.Returning;
         while (Vector3.Distance(transform.position, startPosition) > 0.01f)
         {
-            playerAnimator.SetBool("isAttacking", false);
-            playerAnimator.SetBool("isSprinting", true);
+            //playerAnimator.SetBool("isAttacking", false);
+            //playerAnimator.SetBool("isSprinting", true);
 
             // Frame-rate independent movement back to start
             transform.position = Vector3.MoveTowards(
