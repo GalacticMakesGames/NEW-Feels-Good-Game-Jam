@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using Cinemachine;
 
 public class Enemy : MonoBehaviour
 {
@@ -27,10 +28,15 @@ public class Enemy : MonoBehaviour
 
     public GameObject enemyExplosionParticlePrefab;
 
+    [SerializeField] private float shakeForce = 1f;
+    private CinemachineImpulseSource impulseSource;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         playerAwarenessController = GetComponent<PlayerAwarenessController>();
+
+        impulseSource = GetComponent<CinemachineImpulseSource>();
 
         enemyAttackKeybindPrompt.enabled = false;
     }
@@ -91,10 +97,10 @@ public class Enemy : MonoBehaviour
         enemyAnimator.SetBool("isWalking", false);
         enemyAnimator.SetBool("isDead", true);
 
-        StartCoroutine(DeathSequence());
+        StartCoroutine(DeathSequence(targetDirection));
     }
 
-    private IEnumerator DeathSequence()
+    private IEnumerator DeathSequence(Vector2 direction)
     {
         // Wait for the animation to finish
         yield return new WaitForSeconds(1f);
@@ -105,6 +111,12 @@ public class Enemy : MonoBehaviour
             transform.position.y + spawnHeightOffset,
             transform.position.z
         );
+
+        impulseSource.GenerateImpulseWithVelocity(-direction * shakeForce);
+
+        // Tells the manager that this enemy was killed so its key can be returned to the pool
+        EnemyKeyManager.Instance.ReleaseKeyAndRemoveEnemy(this);
+        Destroy(gameObject);
 
         // Instantiate the light beam from the sky
         if (lightBeamPrefab != null)
@@ -119,10 +131,6 @@ public class Enemy : MonoBehaviour
         }
 
         yield return new WaitForSeconds(1f);
-
-        // Tells the manager that this enemy was killed so its key can be returned to the pool
-        EnemyKeyManager.Instance.ReleaseKeyAndRemoveEnemy(this);
-        Destroy(gameObject);
     }
 
     private void OnTriggerEnter2D(Collider2D collision)

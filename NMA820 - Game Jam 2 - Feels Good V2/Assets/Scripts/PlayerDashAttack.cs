@@ -20,9 +20,12 @@ public class PlayerDashAttack : MonoBehaviour
 
     private SpriteRenderer spriteRenderer;
 
+    AudioSource audioSource;
+
     private void Awake()
     {
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        audioSource = GetComponent<AudioSource>();
     }
 
     public void StartDashAttack(Enemy targetEnemy)
@@ -71,6 +74,7 @@ public class PlayerDashAttack : MonoBehaviour
                 spriteRenderer.flipX = enemyTransform.position.x < transform.position.x;
             }
             playerAnimator.SetTrigger("isAttacking1");
+            audioSource.Play();
             targetEnemy.TakeDamage();
         }
         yield return new WaitForSeconds(1f);
@@ -86,7 +90,7 @@ public class PlayerDashAttack : MonoBehaviour
             transform.position = Vector3.MoveTowards(
                 transform.position,
                 startPosition,
-                dashSpeed * Time.deltaTime
+                dashSpeed + 20f * Time.deltaTime
             );
             yield return null;
         }
