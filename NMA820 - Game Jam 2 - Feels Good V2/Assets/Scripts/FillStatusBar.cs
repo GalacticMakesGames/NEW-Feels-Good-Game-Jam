@@ -35,10 +35,10 @@ public class FillStatusBar : MonoBehaviour
         {
             fillImage.color = Color.red; // critical condition
         }
-        else if (fillValue > slider.maxValue /3f)
-        {
-            fillImage.color = Color.green;
-        }
+        //else if (fillValue > slider.maxValue /3f)
+        //{
+        //    fillImage.color = Color.green;
+        //}
 
             slider.value = fillValue;
     }

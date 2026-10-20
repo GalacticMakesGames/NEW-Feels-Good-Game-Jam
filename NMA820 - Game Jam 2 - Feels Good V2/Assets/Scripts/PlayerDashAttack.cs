@@ -21,6 +21,9 @@ public class PlayerDashAttack : MonoBehaviour
     private SpriteRenderer spriteRenderer;
 
     AudioSource audioSource;
+    [SerializeField] private AudioClip enemyAttackSFX;
+
+    public UltimateAttackManager ultimateAttackManager;
 
     private void Awake()
     {
@@ -74,8 +77,12 @@ public class PlayerDashAttack : MonoBehaviour
                 spriteRenderer.flipX = enemyTransform.position.x < transform.position.x;
             }
             playerAnimator.SetTrigger("isAttacking1");
-            audioSource.Play();
+
+            audioSource.pitch = UnityEngine.Random.Range(1f, 1.5f);
+            audioSource.PlayOneShot(enemyAttackSFX);
+
             targetEnemy.TakeDamage();
+            ultimateAttackManager.UltimateBarFill(5);
         }
         yield return new WaitForSeconds(1f);
 
