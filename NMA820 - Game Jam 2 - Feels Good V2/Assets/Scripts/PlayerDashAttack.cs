@@ -21,7 +21,8 @@ public class PlayerDashAttack : MonoBehaviour
     private SpriteRenderer spriteRenderer;
 
     AudioSource audioSource;
-    [SerializeField] private AudioClip enemyAttackSFX;
+    [SerializeField] private AudioClip playerAttackSFX;
+    [SerializeField] private AudioClip playerDashSFX;
 
     public UltimateAttackManager ultimateAttackManager;
 
@@ -78,11 +79,13 @@ public class PlayerDashAttack : MonoBehaviour
             }
             playerAnimator.SetTrigger("isAttacking1");
 
-            audioSource.pitch = UnityEngine.Random.Range(1f, 1.5f);
-            audioSource.PlayOneShot(enemyAttackSFX);
-
             targetEnemy.TakeDamage();
-            ultimateAttackManager.UltimateBarFill(5);
+            ultimateAttackManager.UltimateBarFill(3);
+
+            yield return new WaitForSeconds(0.1f);
+
+            audioSource.pitch = UnityEngine.Random.Range(0.8f, 1.3f);
+            audioSource.PlayOneShot(playerAttackSFX);
         }
         yield return new WaitForSeconds(1f);
 
@@ -92,6 +95,9 @@ public class PlayerDashAttack : MonoBehaviour
         {
             //playerAnimator.SetBool("isAttacking", false);
             //playerAnimator.SetBool("isSprinting", true);
+
+            audioSource.pitch = UnityEngine.Random.Range(0.7f, 1.2f);
+            audioSource.PlayOneShot(playerDashSFX, 0.5f);
 
             // Frame-rate independent movement back to start
             transform.position = Vector3.MoveTowards(

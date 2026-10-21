@@ -9,6 +9,9 @@ public class PlayerHealth : MonoBehaviour
 
     [SerializeField] private Animator playerAnimator;
 
+    public GameOverManager gameOverManager;
+    public PlayerDashAttack playerDashAttack;
+
     void Start()
     {
         currentHealth = maxHealth;
@@ -21,12 +24,13 @@ public class PlayerHealth : MonoBehaviour
 
         if (currentHealth <= 0)
         {
-            playerAnimator.SetBool("isIdle", false);
-            playerAnimator.SetBool("isDead", true);
+            if (playerDashAttack.isDashing == false)
+            {
+                playerAnimator.SetBool("isIdle", false);
+                playerAnimator.SetBool("isDead", true);
 
-            StartCoroutine(PlayerDeathSequence());
-
-            Debug.Log("Game Over!");
+                StartCoroutine(PlayerDeathSequence());
+            }
         }
     }
 
@@ -35,5 +39,8 @@ public class PlayerHealth : MonoBehaviour
         yield return new WaitForSeconds(1f);
 
         Time.timeScale = 0f;
+
+        gameOverManager.GameOver();
+        Debug.Log("Game Over!");
     }
 }
